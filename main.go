@@ -13,24 +13,24 @@ import (
 
 func main() {
 	var (
-		distro string
+		distro  string
+		flatpak string
 	)
 
 	home, err := os.UserHomeDir()
 
-	fedoraLabel := lipgloss.NewStyle().Foreground(lipgloss.Color(colors.SapphireColor)).Render("Fedora")
 	archLabel := lipgloss.NewStyle().Foreground(lipgloss.Color(colors.BlueColor)).Render("Arch")
+	fedoraLabel := lipgloss.NewStyle().Foreground(lipgloss.Color(colors.SapphireColor)).Render("Fedora")
 
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
-				Title("Which distro?").
+				Title("Qual distro está configurando?").
 				Options(
-					huh.NewOption(fedoraLabel, filepath.Join(home, ".scripts/linux/FedoraInitInstall.sh")),
-					huh.NewOption(archLabel, filepath.Join(home, ".scripts/linux/ArchInitInstall.sh")),
+					huh.NewOption(archLabel, filepath.Join(home, "dotfiles/.scripts/linux/ArchInitInstall.sh")),
+					huh.NewOption(fedoraLabel, filepath.Join(home, "dotfiles/.scripts/linux/FedoraInitInstall.sh")),
 				).
-				Value(&distro).
-				WithTheme(huh.ThemeCatppuccin()),
+				Value(&distro),
 		),
 	)
 
@@ -48,5 +48,44 @@ func main() {
 	err = cmd.Run()
 	if err != nil {
 		log.Fatalf("Erro ao executar o script: %v", err)
+	}
+
+	form2 := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Deseja instalar pacotes flatpak agora?").
+				Options(
+					huh.NewOption("sim", "sim"),
+					huh.NewOption("não", "não"),
+				).
+				Value(&flatpak),
+		),
+	)
+
+	err = form2.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cmd2 := exec.Command("bash", home, "dotfiles/.scripts/linux/FlatpakEssentials.sh")
+
+	cmd2.Stdout = os.Stdout
+	cmd2.Stderr = os.Stderr
+	cmd2.Stdin = os.Stdin
+
+	if flatpak == "sim" {
+		err = cmd2.Run()
+		if err != nil {
+			log.Fatalf("Erro ao executar o script: %v", err)
+		}
+	}
+
+	cmd3 := exec.Command("clear")
+
+	cmd3.Stdout = os.Stdout
+
+	err = cmd3.Run()
+	if err != nil {
+		log.Fatalf("Erro ao executar o comando: %v", err)
 	}
 }
